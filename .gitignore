@@ -1,3 +1,13 @@
+# Project files that doesn't need to be modified and can't be modified in the delivery.
+/images/
+/test/
+Kmeans.py
+my_labeling.py
+TestCases_kmeans.py
+TestCases_knn.py
+utils_data.py
+utils.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
