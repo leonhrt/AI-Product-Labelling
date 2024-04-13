@@ -41,6 +41,7 @@ class KMeans:
             X = X.reshape(-1, X.shape[-1])
 
         self.X = X
+
     def _init_options(self, options=None):
         """
         Initialization of options in case some fields are left undefined
@@ -72,33 +73,39 @@ class KMeans:
         Initialization of centroids
         """
 
-        #######################################################
-        ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
-        ##  AND CHANGE FOR YOUR OWN CODE
-        #######################################################
-        ret = []
-        aux = self.X.tolist()
-        if self.options['km_init'].lower() == 'first': 
-            for i in aux: 
-                if i not in ret: ret.append(i)
-                if len(ret) == self.K: break
-        
-        elif self.options['km_init'].lower() == 'random':
-            while True:
-                i = aux[np.random.randint(self.X.shape[0])]
-                if i not in ret: ret.append(i)
-                if len(ret) == self.K: break
-        
-        elif self.options['km_init'].lower() == 'custom':
-            aux2 = len(aux)//2
-            for i in range(aux2):
-                if aux[i] not in ret: ret.append(aux[i])
-                if len(ret) == self.K: break
-                if aux[aux2+i] not in ret: ret.append(aux[aux2+i])
-                if len(ret) == self.K: break
+        # si self.options['km_init'] == first assignar a temp els primers K elements diferents de X
+        if self.options['km_init'].lower() == 'first':
+            # creació d'un array temp que contindrà els centroides amb els que posteriorment inicialitzarem
+            # self.centroids i self.old_centroids
+            temp = []
+            # iterar per l'array X per obtenir els primers K valors diferents a temp[]
+            for x in self.X:
+                # si temp[] ja conté K valors, deixar d'iterar
+                if len(temp) >= self.K:
+                    break
+                # comprovar si el punt de X en el que es troba la iteració està ja en l'array temp[], si no hi és,
+                # s'afageix. Per la comprovació s'utilitza un bucle per comparar per cada element de l'array temp[]
+                # l'element actual de X (x), any retorna True si coincideix algun dels elements de temp[] amb x
+                if not any(np.array_equal(x, p) for p in temp):
+                    temp.append(x)
 
-        self.centroids = np.array(ret, dtype=np.float64)
-        self.old_centroids = np.array(ret, dtype=np.float64)
+            self.centroids = np.array(temp, dtype=float)
+            self.old_centroids = np.array(temp, dtype=float)
+
+        # si self.options['km-init'] == random assignar a temp punts aleatoris no repetits de X
+        elif self.options['km_init'].lower() == 'random':
+            # seleccionar K indexs aleatoris no repetits (replace=False) menors o igual a X.shape[0] (número de
+            # elements en la primera dimensió de la matriu)
+            temp = np.random.choice(self.X.shape[0], size=self.K, replace=False)
+            # crear matriu centroids a partir de la matriu X i els indexs aleatòris
+            self.centroids = self.X[temp]
+            self.old_centroids = self.X[temp]
+
+        elif self.options['km_init'].lower() == 'custom':
+            # diagonal per fer
+            temp = np.random.choice(self.X.shape[0], size=self.K, replace=False)
+            self.centroids = self.X[temp]
+            self.old_centroids = self.X[temp]
 
     def get_labels(self):
         """
