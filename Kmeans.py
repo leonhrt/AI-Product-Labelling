@@ -1,9 +1,8 @@
-__authors__ = 'TO_BE_FILLED'
+__authors__ = '1679933'
 __group__ = 'TO_BE_FILLED'
 
 import numpy as np
 import utils
-
 
 class KMeans:
 
@@ -30,12 +29,17 @@ class KMeans:
                     if matrix has more than 2 dimensions, the dimensionality of the sample space is the length of
                     the last dimension
         """
-        #######################################################
-        ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
-        ##  AND CHANGE FOR YOUR OWN CODE
-        #######################################################
-        self.X = np.random.rand(100, 5)
 
+        # si X no és de tipus float, es converteix a tipus float amb astype()
+        if X.dtype != float:
+            X = X.astype(float)
+
+        # si X té més de 2 dimensions es converteix a 2D amb reshape(-1, shape[-1]), on shape[-1] és la llargada de la
+        # última dimensió i -1 serveix perquè numpy calculi la primera dimensió resultant corresponent
+        if X.ndim > 2:
+            X = X.reshape(-1, X.shape[-1])
+
+        self.X = X
     def _init_options(self, options=None):
         """
         Initialization of options in case some fields are left undefined
