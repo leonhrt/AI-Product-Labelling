@@ -76,12 +76,29 @@ class KMeans:
         ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
         ##  AND CHANGE FOR YOUR OWN CODE
         #######################################################
-        if self.options['km_init'].lower() == 'first':
-            self.centroids = np.random.rand(self.K, self.X.shape[1])
-            self.old_centroids = np.random.rand(self.K, self.X.shape[1])
-        else:
-            self.centroids = np.random.rand(self.K, self.X.shape[1])
-            self.old_centroids = np.random.rand(self.K, self.X.shape[1])
+        ret = []
+        aux = self.X.tolist()
+        if self.options['km_init'].lower() == 'first': 
+            for i in aux: 
+                if i not in ret: ret.append(i)
+                if len(ret) == self.K: break
+        
+        elif self.options['km_init'].lower() == 'random':
+            while True:
+                i = aux[np.random.randint(self.X.shape[0])]
+                if i not in ret: ret.append(i)
+                if len(ret) == self.K: break
+        
+        elif self.options['km_init'].lower() == 'custom':
+            aux2 = len(aux)//2
+            for i in range(aux2):
+                if aux[i] not in ret: ret.append(aux[i])
+                if len(ret) == self.K: break
+                if aux[aux2+i] not in ret: ret.append(aux[aux2+i])
+                if len(ret) == self.K: break
+
+        self.centroids = np.array(ret, dtype=np.float64)
+        self.old_centroids = np.array(ret, dtype=np.float64)
 
     def get_labels(self):
         """
@@ -94,11 +111,10 @@ class KMeans:
         """
         Calculates coordinates of centroids based on the coordinates of all the points assigned to the centroid
         """
-        #######################################################
-        ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
-        ##  AND CHANGE FOR YOUR OWN CODE
-        #######################################################
-        pass
+        self.old_centroids = self.centroids.copy()
+
+        for i in range(self.K):
+            self.centroids[i] = np.mean(self.X[self.labels == i], axis=0)
 
     def converges(self):
         """
