@@ -192,8 +192,9 @@ def get_colors(centroids):
         labels: list of K labels corresponding to one of the 11 basic colors
     """
 
-    #########################################################
-    ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
-    ##  AND CHANGE FOR YOUR OWN CODE
-    #########################################################
-    return list(utils.colors)
+    # guardar a array_prob l'array K*11 de probabilitats de cada color per cada centroide
+    array_prob = utils.get_color_prob(centroids)
+    # amb np.argmax obtenim els indexs dels valors més alts de les probabilitats de colors
+    # de cada centroide (axis=1 per obtenir valors màxims de files) i amb aquests indexs fem la llista d'etiquetes a
+    # partir de utils.colors
+    return utils.colors[np.argmax(array_prob, axis=1)]
