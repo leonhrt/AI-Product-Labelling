@@ -1,4 +1,4 @@
-__authors__ = '1679933'
+__authors__ = '[1679933,1689435]'
 __group__ = 'TO_BE_FILLED'
 
 import numpy as np
@@ -127,10 +127,9 @@ class KMeans:
         """
         Checks if there is a difference between current and old centroids
         """
-        #######################################################
-        ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
-        ##  AND CHANGE FOR YOUR OWN CODE
-        #######################################################
+        for i in range(self.K):
+            if np.linalg.norm(self.centroids[i] - self.old_centroids[i]) > self.options['tolerance']:
+                return False
         return True
 
     def fit(self):
