@@ -127,10 +127,7 @@ class KMeans:
         """
         Checks if there is a difference between current and old centroids
         """
-        for i in range(self.K):
-            if np.linalg.norm(self.centroids[i] - self.old_centroids[i]) > self.options['tolerance']:
-                return False
-        return True
+        return np.allclose(self.centroids, self.old_centroids, atol=self.options['tolerance'])
 
     def fit(self):
         """
