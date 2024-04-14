@@ -5,6 +5,7 @@ import numpy as np
 import utils
 import scipy.spatial.distance as sc
 
+
 class KMeans:
 
     def __init__(self, X, K=1, options=None):
@@ -135,13 +136,30 @@ class KMeans:
         than the maximum number of iterations.
         """
 
+        # inicialitzar centroides i reestablir num_iter en 0
+        self._init_centroids()
+        self.num_iter = 0
+
+        # iterar mentres num_iter sigui més petit que max_iter
+        while self.num_iter < self.options['max_iter']:
+            # trobar quin és el centroide més proper per cada punt de la imatge
+            self.get_labels()
+            # calcular nous centroides
+            self.get_centroids()
+            # deixar d'iterar quan convergeix
+            if self.converges():
+                break
+            # si no convergeix, augmentar en 1 el nombre d'iteracions per seguir iterant fins que convergeixi o
+            # num_iter == max_iter
+            self.num_iter += 1
+
     def withinClassDistance(self):
         """
          returns the within class distance of the current clustering
         """
         alt = 0
         for i, distances in enumerate(distance(self.X, self.centroids)):
-            alt += distances[self.labels[i]]**2
+            alt += distances[self.labels[i]] ** 2
         return alt
 
     def find_bestK(self, max_K):
