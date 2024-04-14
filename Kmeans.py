@@ -134,32 +134,20 @@ class KMeans:
         Runs K-Means algorithm until it converges or until the number of iterations is smaller
         than the maximum number of iterations.
         """
-        #######################################################
-        ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
-        ##  AND CHANGE FOR YOUR OWN CODE
-        #######################################################
-        pass
 
     def withinClassDistance(self):
         """
          returns the within class distance of the current clustering
         """
-
-        #######################################################
-        ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
-        ##  AND CHANGE FOR YOUR OWN CODE
-        #######################################################
-        pass
+        alt = 0
+        for i, distances in enumerate(distance(self.X, self.centroids)):
+            alt += distances[self.labels[i]]**2
+        return alt
 
     def find_bestK(self, max_K):
         """
          sets the best k analysing the results up to 'max_K' clusters
         """
-        #######################################################
-        ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
-        ##  AND CHANGE FOR YOUR OWN CODE
-        #######################################################
-        pass
 
 
 def distance(X, C):
