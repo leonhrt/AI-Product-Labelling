@@ -93,20 +93,34 @@ class KMeans:
             self.centroids = np.array(temp, dtype=float)
             self.old_centroids = np.array(temp, dtype=float)
 
-        # si self.options['km-init'] == random assignar a temp punts aleatoris no repetits de X
+        # si self.options['km-init'] == random assignar a self.centroids punts aleatòris no repetits de X
         elif self.options['km_init'].lower() == 'random':
-            # seleccionar K indexs aleatoris no repetits (replace=False) menors o igual a X.shape[0] (número de
+            # seleccionar K indexs aleatoris no repetits (replace=False) menors a X.shape[0] (número de
             # elements en la primera dimensió de la matriu)
-            temp = np.random.choice(self.X.shape[0], size=self.K, replace=False)
+            temp = np.random.choice(self.X.shape[0], self.K, replace=False)
             # crear matriu centroids a partir de la matriu X i els indexs aleatòris
             self.centroids = self.X[temp]
             self.old_centroids = self.X[temp]
 
         elif self.options['km_init'].lower() == 'custom':
-            # diagonal per fer
-            temp = np.random.choice(self.X.shape[0], size=self.K, replace=False)
-            self.centroids = self.X[temp]
-            self.old_centroids = self.X[temp]
+            # considerem un hipercub de X.shape[0] dimensions, com que cada costat té 3 elements (o x.shape[1]
+            # elements), la diagonal es calcularia com sqrt(x.shape[0]) * x.shape[1], però considerem que els costats
+            # tenen una longitud de 1 per obtenir els indexs de forma més directe
+            # ex. la diagonal del cub es calcula com sqrt(3) * L, on 3 fa referència a la 3ra dimensió i L
+            # la longitud del costat
+            diagonal_len = np.sqrt(self.X.shape[0])
+            # calcular l'espai entre elements de l'array X per obtenir els indexs de la diagonal
+            gap = self.X.shape[0] / diagonal_len
+            # crear un array amb els indexs corresponents de la diagonal
+            diagonal_indexes = np.arange(0, self.X.shape[0], gap, dtype=int)
+            # calcular l'espai entre elements de la diagonal per obtenir K indexs distribuits uniformament
+            gap = int(diagonal_indexes.shape[0] / self.K)
+            # crear un array amb els K indexs distribuits uniformament de la diagonal
+            distributed_indexes = diagonal_indexes[gap-1::gap]
+            # centroids serà l'array generat a partir dels indexs distributed_indexes de l'array X
+            self.centroids = self.X[distributed_indexes]
+            self.old_centroids = self.X[distributed_indexes]
+
 
     def get_labels(self):
         """
