@@ -173,7 +173,7 @@ class KMeans:
         self.fit()
         wcd_old = self.withinClassDistance()
 
-        for i in range(3, max_K):
+        for i in range(self.K + 1, max_K):
             self.K = i
             self.fit()
             wcd_actual = self.withinClassDistance()
