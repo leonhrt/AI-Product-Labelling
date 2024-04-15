@@ -1,5 +1,5 @@
-__authors__ = '[1679933,1689435]'
-__group__ = 'TO_BE_FILLED'
+__authors__ = ['1679933','1689435']
+__group__ = 'noneyet'
 
 import numpy as np
 import utils
@@ -61,6 +61,8 @@ class KMeans:
             options['max_iter'] = np.inf
         if 'fitting' not in options:
             options['fitting'] = 'WCD'  # within class distance.
+        if 'threshold' not in options:
+            options['threshold'] = 20
 
         # If your methods need any other parameter you can add it to the options dictionary
         self.options = options
@@ -157,16 +159,30 @@ class KMeans:
         """
          returns the within class distance of the current clustering
         """
-        alt = 0
+        wcd = 0
         for i, distances in enumerate(distance(self.X, self.centroids)):
-            alt += distances[self.labels[i]] ** 2
-        return alt
+            wcd += distances[self.labels[i]] ** 2
+        return wcd
 
     def find_bestK(self, max_K):
         """
          sets the best k analysing the results up to 'max_K' clusters
         """
+        threshold = self.options['threshold'] / 100
+        self.K = 2
+        self.fit()
+        wcd_old = self.withinClassDistance()
 
+        for i in range(3, max_K):
+            self.K = i
+            self.fit()
+            wcd_actual = self.withinClassDistance()
+            if 1 - (wcd_actual / wcd_old) < threshold:
+                self.K -= 1
+                break
+            wcd_old = wcd_actual
+        
+        
 
 def distance(X, C):
     """
