@@ -68,11 +68,9 @@ class KNN:
         :return: 1 array of Nx1 elements. For each of the rows in self.neighbors gets the most voted value
                 (i.e. the class at which that row belongs)
         """
-        #######################################################
-        ##  YOU MUST REMOVE THE REST OF THE CODE OF THIS FUNCTION
-        ##  AND CHANGE FOR YOUR OWN CODE
-        #######################################################
-        return np.random.randint(10, size=self.neighbors.size), np.random.random(self.neighbors.size)
+
+        # retornar una llista dels elements més repetits de cada llista de self.neighbors
+        return [max(x, key=x.count) for x in self.neighbors.tolist()]
 
     def predict(self, test_data, k):
         """
