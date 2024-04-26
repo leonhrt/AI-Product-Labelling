@@ -1,5 +1,5 @@
 __authors__ = ['1679933','1689435']
-__group__ = 'noneyet'
+__group__ = '100'
 
 import numpy as np
 import math
