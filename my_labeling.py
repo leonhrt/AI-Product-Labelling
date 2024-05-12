@@ -1,10 +1,12 @@
 __authors__ = ['1679933','1689435']
 __group__ = '100'
 
-from utils_data import read_dataset, read_extended_dataset, crop_images, visualize_retrieval
+from utils_data import read_dataset, read_extended_dataset, crop_images, visualize_retrieval, visualize_k_means, Plot3DCloud
 import KNN
 import Kmeans
 import numpy as np
+import time
+import matplotlib.pyplot as plt
 
 
 if __name__ == '__main__':
@@ -75,6 +77,58 @@ if __name__ == '__main__':
         # es retorna retrieves_images[], que ja conté totes les imatges coincidents en forma i color
         return retrieved_images
 
+    def kmean_statistics(kmeans, kmax):
+        iter = []
+        wcd = []
+        time_list = []
+        for k in range(2, kmax + 1):
+            kmeans.K = k
+            start = time.time()
+            kmeans.fit()
+            end = time.time()
+            iter.append(kmeans.num_iter)
+            wcd.append(kmeans.withinClassDistance())
+            time_list.append(end - start)
+        
+        return wcd, iter, time_list
+
+    def visualize_statistics(iter, wcd, time_list, kmax):
+        total_iter = range(2, kmax + 1)
+        plt.figure(figsize=(10, 6))
+    
+        plt.subplot(1, 3, 1)
+        plt.plot(total_iter, wcd, marker='o')
+        plt.title('Distància intra-clas (WCD)')
+        plt.xlabel('Número de clústers K')
+        plt.ylabel('WCD')
+        
+        plt.subplot(1, 3, 2)
+        plt.plot(total_iter, iter, marker='o')
+        plt.title('Número de iteracions')
+        plt.xlabel('Número de clústers (K)')
+        plt.ylabel('Iteracions')
+        
+        plt.subplot(1, 3, 3)
+        plt.plot(total_iter, time_list, marker='o')
+        plt.title('Temps de convergència')
+        plt.xlabel('Número de clústers (K)')
+        plt.ylabel('Temps (segons)')
+        
+        plt.tight_layout()
+        plt.show()
+
+    def get_shape_accuracy(labels, ground_truth):
+        labels_len = len(labels)
+        if labels_len != len(ground_truth):
+            return None
+
+        correct_shapes = np.equal(labels, ground_truth)
+        accuracy_percentage = np.count_nonzero(correct_shapes) / labels_len * 100
+
+        return accuracy_percentage
+
+    def get_color_accuracy():
+        pass
 
     # ------------- set up ---------------
 
@@ -93,12 +147,20 @@ if __name__ == '__main__':
 
     # ------------- qualitative analysis ---------------
 
-    color = retrieval_by_color(test_imgs, color_labels, 'white')
-    visualize_retrieval(color, 20)
+    #color = retrieval_by_color(test_imgs, color_labels, 'white')
+    #visualize_retrieval(color, 20)
 
-    shape = retrieval_by_shape(test_imgs, shape_labels, 'Flip FLOPs')
-    visualize_retrieval(shape, 20)
+    #shape, ok = retrieval_by_shape(test_imgs, shape_labels, 'Flip FLOPs')
+    #visualize_retrieval(shape, 20)
 
-    combined = retrieval_combined(test_imgs, color_labels, shape_labels, 'PInk', 'HandBAGs')
-    visualize_retrieval(combined, 20)
+    #combined = retrieval_combined(test_imgs, color_labels, shape_labels, 'PInk', 'HandBAGs')
+    #visualize_retrieval(combined, 20)
+
+    # ------------- quantitative analysis ---------------
+
+    #wcd, iter, time_list = kmean_statistics(km, 10)
+    #visualize_statistics(wcd, iter, time_list, 10)
+
+    accuracy = get_shape_accuracy(shape_labels, test_class_labels)
+    print(f"Percentatge d'etiquetes correctes: {accuracy}%")
 
