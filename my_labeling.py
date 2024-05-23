@@ -150,7 +150,7 @@ if __name__ == '__main__':
     #color = retrieval_by_color(test_imgs, color_labels, 'white')
     #visualize_retrieval(color, 20)
 
-    #shape, ok = retrieval_by_shape(test_imgs, shape_labels, 'Flip FLOPs')
+    #shape = retrieval_by_shape(test_imgs, shape_labels, 'Flip FLOPs')
     #visualize_retrieval(shape, 20)
 
     #combined = retrieval_combined(test_imgs, color_labels, shape_labels, 'PInk', 'HandBAGs')
@@ -158,9 +158,9 @@ if __name__ == '__main__':
 
     # ------------- quantitative analysis ---------------
 
-    #wcd, iter, time_list = kmean_statistics(km, 10)
-    #visualize_statistics(wcd, iter, time_list, 10)
+    wcd, iter, time_list = kmean_statistics(km, 10)
+    visualize_statistics(wcd, iter, time_list, 10)
 
-    accuracy = get_shape_accuracy(shape_labels, test_class_labels)
-    print(f"Percentatge d'etiquetes correctes: {accuracy}%")
+    #accuracy = get_shape_accuracy(shape_labels, test_class_labels)
+    #print(f"Percentatge d'etiquetes correctes: {accuracy}%")
 
