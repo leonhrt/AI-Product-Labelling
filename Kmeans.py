@@ -97,12 +97,17 @@ class KMeans:
 
         # si self.options['km-init'] == random assignar a self.centroids punts aleatòris no repetits de X
         elif self.options['km_init'].lower() == 'random':
-            # seleccionar K indexs aleatoris no repetits (replace=False) menors a X.shape[0] (número de
-            # elements en la primera dimensió de la matriu)
-            temp = np.random.choice(self.X.shape[0], self.K, replace=False)
-            # crear matriu centroids a partir de la matriu X i els indexs aleatòris
-            self.centroids = self.X[temp]
-            self.old_centroids = self.X[temp]
+            # Convertir los puntos a tuplas y almacenarlos en un diccionario para eliminar duplicados
+            temp_dict = {tuple(point): 1 for point in self.X}
+            # Convertir las claves del diccionario de vuelta a un array numpy
+            unique_points = np.array(list(temp_dict.keys()))
+
+            # Mezclar los puntos únicos aleatoriamente
+            np.random.shuffle(unique_points)
+
+            # Seleccionar los primeros K puntos como centroides
+            self.centroids = unique_points[:self.K].astype(float)
+            self.old_centroids = np.copy(self.centroids)
 
         elif self.options['km_init'].lower() == 'custom':
             # considerem un hipercub de X.shape[0] dimensions, com que cada costat té 3 elements (o x.shape[1]
