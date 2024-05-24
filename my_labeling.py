@@ -72,8 +72,10 @@ if __name__ == '__main__':
 
         # crear llista que contindrà les imatges que coincideixin
         retrieved_images = []
+        # crear llista que contindrà indexs de coincidents
+        indexs = []
         # iterar per les llistes d'imatges, etiquetes de colors i etiquetes de formes a la vegada
-        for img, color_label, shape_label in zip(images, color_labels, shape_labels):
+        for i, (img, color_label, shape_label) in enumerate(zip(images, color_labels, shape_labels)):
             # comprovar si l'etiqueta de forma d'aquella imatge coincideix amb la query_shape
             if query_shape.lower() == shape_label.lower():
                 # si coincideix en forma, comprovar si alguna de les query_color és l'etiqueta de color
@@ -81,8 +83,9 @@ if __name__ == '__main__':
                     # si coincideix tant en forma com en color amb query_shape i query_color, afegir a
                     # retrieved_images[]
                     retrieved_images.append(img)
+                    indexs.append(i)
         # es retorna retrieves_images[], que ja conté totes les imatges coincidents en forma i color
-        return retrieved_images
+        return indexs, np.array(retrieved_images)
 
     def kmean_statistics(kmeans, kmax):
         iter = []
@@ -146,15 +149,17 @@ if __name__ == '__main__':
     # 0: Kmeans (retrieval by color),
     # 1: KNN (retrieval by shape),
     # 2: Kmeans and KNN combined (retrieval by color and shape)
-    mytype = 1
+    # 3: None
+    my_type = 0
     # string o array de strings, case-insesitive
-    # s'accepten més d'un color amb mytype=0, una sola forma per mytype = 1, i un sol color i forma per mytype=2
+    # s'accepten més d'un color però només una forma
     # exemples:
     # 'blue'
     # ['pink', 'blue']
     # 'Flip flOPS'
     # ['pinK', 'jeAns']
-    myquery = 'flip flops'
+    my_color_query = 'pink'
+    my_shape_query = 'handbags'
 
     # set up
     knn = KNN.KNN(train_imgs, train_class_labels)
@@ -169,31 +174,43 @@ if __name__ == '__main__':
         color_labels.append(colors)
 
     # analysis
-    if mytype == 0:
-        if type(myquery) != list:
-            myquery = [myquery]
-        idx, color = retrieval_by_color(test_imgs, color_labels, myquery)
+    if type(my_color_query) != list:
+        my_color_query = [my_color_query]
+
+    if my_type == 0:
+        idx, color = retrieval_by_color(test_imgs, color_labels, my_color_query)
         truth = []
         truth_labels = []
         for i in idx:
             truth_labels.append(test_color_labels[i])
-            truth.append(True if any(query in np.char.lower(test_color_labels[i]) for query in np.char.lower(myquery)) else False)
-        visualize_retrieval(color, 20, info=truth_labels, ok=truth, title=myquery)
+            truth.append(True if any(query in np.char.lower(test_color_labels[i]) for query in np.char.lower(my_color_query)) else False)
+        visualize_retrieval(color, 20, info=truth_labels, ok=truth, title=my_color_query)
 
-    elif mytype == 1:
-        idx, shape = retrieval_by_shape(test_imgs, shape_labels, myquery)
+    elif my_type == 1:
+        idx, shape = retrieval_by_shape(test_imgs, shape_labels, my_shape_query)
         truth = []
         truth_labels = []
         for i in idx:
             truth_labels.append(test_class_labels[i])
-            truth.append(True if myquery.lower() == test_class_labels[i].lower() else False)
-        visualize_retrieval(shape, 20, info=truth_labels, ok=truth, title=myquery)
+            truth.append(True if my_shape_query.lower() == test_class_labels[i].lower() else False)
+        visualize_retrieval(shape, 20, info=truth_labels, ok=truth, title=my_shape_query)
 
-    elif mytype == 2:
+    elif my_type == 2:
+        idx, combined = retrieval_combined(test_imgs, color_labels, shape_labels, my_color_query, my_shape_query)
+        truth = []
+        truth_labels = []
+        for i in idx:
+            truth_labels.append([test_color_labels[i], test_class_labels[i]])
+            truth.append(True if my_shape_query.lower() == test_class_labels[i].lower() and
+                                 any(query in np.char.lower(test_color_labels[i]) for query in np.char.lower(my_color_query))
+                         else False)
+        visualize_retrieval(combined, 20, info=truth_labels, ok=truth, title=f"{my_color_query}, {my_shape_query}")
+
+    elif my_type == 3:
         pass
 
     else:
-        print('NOMÉS 0, 1 o 2 recorxolis!')
+        print('NOMÉS 0, 1, 2 o 3 recorxolis!')
 
     """
 
@@ -207,3 +224,4 @@ if __name__ == '__main__':
 
     #accuracy = get_shape_accuracy(shape_labels, test_class_labels)
     #print(f"Percentatge d'etiquetes correctes: {accuracy}%")
+    """
