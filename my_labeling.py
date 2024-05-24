@@ -50,15 +50,18 @@ if __name__ == '__main__':
     def retrieval_by_shape(images, labels, query_shape):
         # crear llista que contindrà les imatges que coincideixin en colors
         retrieved_images = []
+        # crear llista que contindrà indexs de coincidents
+        indexs = []
         # iterar per les etiquetes de forma i imatges per trobar coincidència amb query_shape
-        for img, label in zip(images, labels):
+        for i, (img, label) in enumerate(zip(images, labels)):
             # verificar si la forma de l'etiqueta coincideix amb query_shape, .lower() converteix a minúscules
             # per no tenir errors en la comparació
             if query_shape.lower() == label.lower():
                 # si es troba imatge que coincideix en forma amb query_shape, s'afegeix a retrieved_images[]
                 retrieved_images.append(img)
+                indexs.append(i)
         # es retorna retrieves_images[], que ja conté totes les imatges coincidents en forma amb query_shape
-        return retrieved_images
+        return indexs, np.array(retrieved_images)
 
 
     def retrieval_combined(images, color_labels, shape_labels, query_color, query_shape):
@@ -136,14 +139,26 @@ if __name__ == '__main__':
 
 
 
-    # ------------- qualitative analysis ---------------
+    # QUALITATIVE ANALYSIS
 
+    # input
+
+    # 0: Kmeans (retrieval by color),
+    # 1: KNN (retrieval by shape),
+    # 2: Kmeans and KNN combined (retrieval by color and shape)
+    mytype = 1
+    # string o array de strings, case-insesitive
+    # s'accepten més d'un color amb mytype=0, una sola forma per mytype = 1, i un sol color i forma per mytype=2
+    # exemples:
+    # 'blue'
+    # ['pink', 'blue']
+    # 'Flip flOPS'
+    # ['pinK', 'jeAns']
+    myquery = 'flip flops'
 
     # set up
     knn = KNN.KNN(train_imgs, train_class_labels)
-
     shape_labels = knn.predict(test_imgs, 5)
-
     imgs = test_imgs
     color_labels = []
     options = {}
@@ -154,21 +169,33 @@ if __name__ == '__main__':
         color_labels.append(colors)
 
     # analysis
-    myquery = 'white'
-    if type(myquery) != list:
-        myquery = [myquery]
-    idx, color = retrieval_by_color(test_imgs, color_labels, myquery)
+    if mytype == 0:
+        if type(myquery) != list:
+            myquery = [myquery]
+        idx, color = retrieval_by_color(test_imgs, color_labels, myquery)
+        truth = []
+        truth_labels = []
+        for i in idx:
+            truth_labels.append(test_color_labels[i])
+            truth.append(True if any(query in np.char.lower(test_color_labels[i]) for query in np.char.lower(myquery)) else False)
+        visualize_retrieval(color, 20, info=truth_labels, ok=truth, title=myquery)
 
-    truth = []
-    truth_labels = []
-    for i in idx:
-        truth_labels.append(test_color_labels[i])
-        truth.append(True if any(query in np.char.lower(test_color_labels[i]) for query in np.char.lower(myquery)) else False)
+    elif mytype == 1:
+        idx, shape = retrieval_by_shape(test_imgs, shape_labels, myquery)
+        truth = []
+        truth_labels = []
+        for i in idx:
+            truth_labels.append(test_class_labels[i])
+            truth.append(True if myquery.lower() == test_class_labels[i].lower() else False)
+        visualize_retrieval(shape, 20, info=truth_labels, ok=truth, title=myquery)
 
-    visualize_retrieval(color, 20, info=truth_labels, ok=truth, title=myquery)
+    elif mytype == 2:
+        pass
+
+    else:
+        print('NOMÉS 0, 1 o 2 recorxolis!')
+
     """
-    #shape = retrieval_by_shape(test_imgs, shape_labels, 'Flip FLOPs')
-    #visualize_retrieval(shape, 20)
 
     #combined = retrieval_combined(test_imgs, color_labels, shape_labels, 'PInk', 'HandBAGs')
     #visualize_retrieval(combined, 20)
@@ -180,23 +207,3 @@ if __name__ == '__main__':
 
     #accuracy = get_shape_accuracy(shape_labels, test_class_labels)
     #print(f"Percentatge d'etiquetes correctes: {accuracy}%")
-    
-
-    print('Qualitative analysis. Executing KMeans...')
-    prediction_colors = []  # Execute KMeans for every image to get color tags
-    for input in test_imgs:
-        model = Kmeans.KMeans(input)
-        model.find_bestK(5)
-        model.fit()
-        color = Kmeans.get_colors(model.centroids)
-        prediction_colors.append(color)
-
-    for color in utils.colors:
-        index, retrieval = retrieval_by_color(test_imgs, prediction_colors, [color])
-        truth = []
-        truth_labels = []
-        for i in index:
-            truth_labels.append(test_color_labels[i])
-            truth.append(True if color in test_color_labels[i] else False)
-        visualize_retrieval(retrieval, 15, title=color, ok=truth, info=truth_labels)
-    """
