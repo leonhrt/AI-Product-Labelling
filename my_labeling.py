@@ -2,6 +2,7 @@ __authors__ = ['1679933','1689435']
 __group__ = '100'
 
 from utils_data import read_dataset, read_extended_dataset, crop_images, visualize_retrieval, visualize_k_means, Plot3DCloud
+import utils
 import KNN
 import Kmeans
 import numpy as np
@@ -31,30 +32,36 @@ if __name__ == '__main__':
 
         # crear llista que contindrà les imatges que coincideixin en colors
         retrieved_images = []
+        # crear llista que contindrà indexs de coincidents
+        indexs = []
         # iterar per les etiquetes de colors i imatges per trobar coincidència amb query_color
-        for img, label in zip(images, labels):
+        for i, (img, label) in enumerate(zip(images, labels)):
             # verificar si els colors de l'etiqueta coincideixen amb alguna query_color, np.char.lower() converteix a minúscules
             # per no tenir errors en la comparació, any() retorna True si algun dels elements de query_color és igual
             # que l'etiqueta
             if any(query in np.char.lower(label) for query in np.char.lower(query_color)):
                 # si es troba imatge que coincideix en colors amb query_color, s'afegeix a retrieved_images[]
                 retrieved_images.append(img)
+                indexs.append(i)
         # es retorna retrieves_images[], que ja conté totes les imatges coincidents en color amb query_color
-        return retrieved_images
+        return indexs, np.array(retrieved_images)
 
 
     def retrieval_by_shape(images, labels, query_shape):
         # crear llista que contindrà les imatges que coincideixin en colors
         retrieved_images = []
+        # crear llista que contindrà indexs de coincidents
+        indexs = []
         # iterar per les etiquetes de forma i imatges per trobar coincidència amb query_shape
-        for img, label in zip(images, labels):
+        for i, (img, label) in enumerate(zip(images, labels)):
             # verificar si la forma de l'etiqueta coincideix amb query_shape, .lower() converteix a minúscules
             # per no tenir errors en la comparació
             if query_shape.lower() == label.lower():
                 # si es troba imatge que coincideix en forma amb query_shape, s'afegeix a retrieved_images[]
                 retrieved_images.append(img)
+                indexs.append(i)
         # es retorna retrieves_images[], que ja conté totes les imatges coincidents en forma amb query_shape
-        return retrieved_images
+        return indexs, np.array(retrieved_images)
 
 
     def retrieval_combined(images, color_labels, shape_labels, query_color, query_shape):
@@ -65,8 +72,10 @@ if __name__ == '__main__':
 
         # crear llista que contindrà les imatges que coincideixin
         retrieved_images = []
+        # crear llista que contindrà indexs de coincidents
+        indexs = []
         # iterar per les llistes d'imatges, etiquetes de colors i etiquetes de formes a la vegada
-        for img, color_label, shape_label in zip(images, color_labels, shape_labels):
+        for i, (img, color_label, shape_label) in enumerate(zip(images, color_labels, shape_labels)):
             # comprovar si l'etiqueta de forma d'aquella imatge coincideix amb la query_shape
             if query_shape.lower() == shape_label.lower():
                 # si coincideix en forma, comprovar si alguna de les query_color és l'etiqueta de color
@@ -74,8 +83,9 @@ if __name__ == '__main__':
                     # si coincideix tant en forma com en color amb query_shape i query_color, afegir a
                     # retrieved_images[]
                     retrieved_images.append(img)
+                    indexs.append(i)
         # es retorna retrieves_images[], que ja conté totes les imatges coincidents en forma i color
-        return retrieved_images
+        return indexs, np.array(retrieved_images)
 
     def kmean_statistics(kmeans, kmax):
         iter = []
@@ -130,37 +140,83 @@ if __name__ == '__main__':
     def get_color_accuracy():
         pass
 
-    # ------------- set up ---------------
 
-    knn = KNN.KNN(train_imgs, train_class_labels)
+    # ------------------------------
+    # QUALITATIVE ANALYSIS
 
-    shape_labels = knn.predict(test_imgs, 5)
+    # input
 
-    imgs = test_imgs
-    color_labels = []
-    options = {}
-    for img in imgs:
-        km = Kmeans.KMeans(img, 1, options)
-        km.fit()
-        colors = Kmeans.get_colors(km.centroids)
-        color_labels.append(colors)
+    # 1: Kmeans (retrieval by color),
+    # 2: KNN (retrieval by shape),
+    # 3: Kmeans and KNN combined (retrieval by color and shape)
+    # 0: None
+    my_retrieval = 0
 
-    # ------------- qualitative analysis ---------------
+    # string o array de strings, case-insesitive, s'accepta més d'un color però només una forma
+    # exemples:
+    # 'blue'
+    # ['pink', 'blue']
+    # 'Flip flOPS'
+    # ['pinK', 'jeAns']
+    my_color_query = 'pink'
+    my_shape_query = 'handbags'
 
-    #color = retrieval_by_color(test_imgs, color_labels, 'white')
-    #visualize_retrieval(color, 20)
+    if my_retrieval != 0:
+        # set up
+        knn = KNN.KNN(train_imgs, train_class_labels)
+        shape_labels = knn.predict(test_imgs, 5)
+        imgs = test_imgs
+        color_labels = []
+        options = {}
+        for img in imgs:
+            km = Kmeans.KMeans(img, 1, options)
+            km.fit()
+            colors = Kmeans.get_colors(km.centroids)
+            color_labels.append(colors)
 
-    #shape, ok = retrieval_by_shape(test_imgs, shape_labels, 'Flip FLOPs')
-    #visualize_retrieval(shape, 20)
+        # analysis
+        if type(my_color_query) != list:
+            my_color_query = [my_color_query]
 
-    #combined = retrieval_combined(test_imgs, color_labels, shape_labels, 'PInk', 'HandBAGs')
-    #visualize_retrieval(combined, 20)
+        if my_retrieval == 1:
+            idx, color = retrieval_by_color(test_imgs, color_labels, my_color_query)
+            truth = []
+            truth_labels = []
+            for i in idx:
+                truth_labels.append(test_color_labels[i])
+                truth.append(True if any(query in np.char.lower(test_color_labels[i]) for query in np.char.lower(my_color_query)) else False)
+            visualize_retrieval(color, 20, info=truth_labels, ok=truth, title=my_color_query)
 
-    # ------------- quantitative analysis ---------------
+        elif my_retrieval == 2:
+            idx, shape = retrieval_by_shape(test_imgs, shape_labels, my_shape_query)
+            truth = []
+            truth_labels = []
+            for i in idx:
+                truth_labels.append(test_class_labels[i])
+                truth.append(True if my_shape_query.lower() == test_class_labels[i].lower() else False)
+            visualize_retrieval(shape, 20, info=truth_labels, ok=truth, title=my_shape_query)
 
-    #wcd, iter, time_list = kmean_statistics(km, 10)
-    #visualize_statistics(wcd, iter, time_list, 10)
+        elif my_retrieval == 3:
+            idx, combined = retrieval_combined(test_imgs, color_labels, shape_labels, my_color_query, my_shape_query)
+            truth = []
+            truth_labels = []
+            for i in idx:
+                truth_labels.append([test_color_labels[i], test_class_labels[i]])
+                truth.append(True if my_shape_query.lower() == test_class_labels[i].lower() and
+                                     any(query in np.char.lower(test_color_labels[i]) for query in np.char.lower(my_color_query))
+                             else False)
+            visualize_retrieval(combined, 20, info=truth_labels, ok=truth, title=f"{my_color_query}, {my_shape_query}")
+
+        else:
+            print('NOMÉS 0, 1, 2 o 3 recorxolis!')
+
+    """
+    # -----------------------------
+    # QUANTITATIVE ANALYSIS
+
+    wcd, iter, time_list = kmean_statistics(km, 10)
+    visualize_statistics(wcd, iter, time_list, 10)
 
     accuracy = get_shape_accuracy(shape_labels, test_class_labels)
     print(f"Percentatge d'etiquetes correctes: {accuracy}%")
-
+    """
