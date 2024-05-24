@@ -141,16 +141,16 @@ if __name__ == '__main__':
         pass
 
 
-
+    # ------------------------------
     # QUALITATIVE ANALYSIS
 
     # input
 
-    # 0: Kmeans (retrieval by color),
-    # 1: KNN (retrieval by shape),
-    # 2: Kmeans and KNN combined (retrieval by color and shape)
-    # 3: None
-    my_type = 0
+    # 1: Kmeans (retrieval by color),
+    # 2: KNN (retrieval by shape),
+    # 3: Kmeans and KNN combined (retrieval by color and shape)
+    # 0: None
+    my_retrieval = 0
     # string o array de strings, case-insesitive
     # s'accepten més d'un color però només una forma
     # exemples:
@@ -162,22 +162,23 @@ if __name__ == '__main__':
     my_shape_query = 'handbags'
 
     # set up
-    knn = KNN.KNN(train_imgs, train_class_labels)
-    shape_labels = knn.predict(test_imgs, 5)
-    imgs = test_imgs
-    color_labels = []
-    options = {}
-    for img in imgs:
-        km = Kmeans.KMeans(img, 1, options)
-        km.fit()
-        colors = Kmeans.get_colors(km.centroids)
-        color_labels.append(colors)
+    if my_retrieval != 0:
+        knn = KNN.KNN(train_imgs, train_class_labels)
+        shape_labels = knn.predict(test_imgs, 5)
+        imgs = test_imgs
+        color_labels = []
+        options = {}
+        for img in imgs:
+            km = Kmeans.KMeans(img, 1, options)
+            km.fit()
+            colors = Kmeans.get_colors(km.centroids)
+            color_labels.append(colors)
 
-    # analysis
-    if type(my_color_query) != list:
-        my_color_query = [my_color_query]
+        # analysis
+        if type(my_color_query) != list:
+            my_color_query = [my_color_query]
 
-    if my_type == 0:
+    if my_retrieval == 1:
         idx, color = retrieval_by_color(test_imgs, color_labels, my_color_query)
         truth = []
         truth_labels = []
@@ -186,7 +187,7 @@ if __name__ == '__main__':
             truth.append(True if any(query in np.char.lower(test_color_labels[i]) for query in np.char.lower(my_color_query)) else False)
         visualize_retrieval(color, 20, info=truth_labels, ok=truth, title=my_color_query)
 
-    elif my_type == 1:
+    elif my_retrieval == 2:
         idx, shape = retrieval_by_shape(test_imgs, shape_labels, my_shape_query)
         truth = []
         truth_labels = []
@@ -195,7 +196,7 @@ if __name__ == '__main__':
             truth.append(True if my_shape_query.lower() == test_class_labels[i].lower() else False)
         visualize_retrieval(shape, 20, info=truth_labels, ok=truth, title=my_shape_query)
 
-    elif my_type == 2:
+    elif my_retrieval == 3:
         idx, combined = retrieval_combined(test_imgs, color_labels, shape_labels, my_color_query, my_shape_query)
         truth = []
         truth_labels = []
@@ -206,22 +207,16 @@ if __name__ == '__main__':
                          else False)
         visualize_retrieval(combined, 20, info=truth_labels, ok=truth, title=f"{my_color_query}, {my_shape_query}")
 
-    elif my_type == 3:
-        pass
-
-    else:
+    elif my_retrieval != 0:
         print('NOMÉS 0, 1, 2 o 3 recorxolis!')
 
     """
+    # -----------------------------
+    # QUANTITATIVE ANALYSIS
 
-    #combined = retrieval_combined(test_imgs, color_labels, shape_labels, 'PInk', 'HandBAGs')
-    #visualize_retrieval(combined, 20)
+    wcd, iter, time_list = kmean_statistics(km, 10)
+    visualize_statistics(wcd, iter, time_list, 10)
 
-    # ------------- quantitative analysis ---------------
-
-    #wcd, iter, time_list = kmean_statistics(km, 10)
-    #visualize_statistics(wcd, iter, time_list, 10)
-
-    #accuracy = get_shape_accuracy(shape_labels, test_class_labels)
-    #print(f"Percentatge d'etiquetes correctes: {accuracy}%")
+    accuracy = get_shape_accuracy(shape_labels, test_class_labels)
+    print(f"Percentatge d'etiquetes correctes: {accuracy}%")
     """
