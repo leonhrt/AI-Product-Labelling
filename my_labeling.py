@@ -151,8 +151,8 @@ if __name__ == '__main__':
     # 3: Kmeans and KNN combined (retrieval by color and shape)
     # 0: None
     my_retrieval = 0
-    # string o array de strings, case-insesitive
-    # s'accepten més d'un color però només una forma
+
+    # string o array de strings, case-insesitive, s'accepta més d'un color però només una forma
     # exemples:
     # 'blue'
     # ['pink', 'blue']
@@ -161,8 +161,8 @@ if __name__ == '__main__':
     my_color_query = 'pink'
     my_shape_query = 'handbags'
 
-    # set up
     if my_retrieval != 0:
+        # set up
         knn = KNN.KNN(train_imgs, train_class_labels)
         shape_labels = knn.predict(test_imgs, 5)
         imgs = test_imgs
@@ -178,37 +178,37 @@ if __name__ == '__main__':
         if type(my_color_query) != list:
             my_color_query = [my_color_query]
 
-    if my_retrieval == 1:
-        idx, color = retrieval_by_color(test_imgs, color_labels, my_color_query)
-        truth = []
-        truth_labels = []
-        for i in idx:
-            truth_labels.append(test_color_labels[i])
-            truth.append(True if any(query in np.char.lower(test_color_labels[i]) for query in np.char.lower(my_color_query)) else False)
-        visualize_retrieval(color, 20, info=truth_labels, ok=truth, title=my_color_query)
+        if my_retrieval == 1:
+            idx, color = retrieval_by_color(test_imgs, color_labels, my_color_query)
+            truth = []
+            truth_labels = []
+            for i in idx:
+                truth_labels.append(test_color_labels[i])
+                truth.append(True if any(query in np.char.lower(test_color_labels[i]) for query in np.char.lower(my_color_query)) else False)
+            visualize_retrieval(color, 20, info=truth_labels, ok=truth, title=my_color_query)
 
-    elif my_retrieval == 2:
-        idx, shape = retrieval_by_shape(test_imgs, shape_labels, my_shape_query)
-        truth = []
-        truth_labels = []
-        for i in idx:
-            truth_labels.append(test_class_labels[i])
-            truth.append(True if my_shape_query.lower() == test_class_labels[i].lower() else False)
-        visualize_retrieval(shape, 20, info=truth_labels, ok=truth, title=my_shape_query)
+        elif my_retrieval == 2:
+            idx, shape = retrieval_by_shape(test_imgs, shape_labels, my_shape_query)
+            truth = []
+            truth_labels = []
+            for i in idx:
+                truth_labels.append(test_class_labels[i])
+                truth.append(True if my_shape_query.lower() == test_class_labels[i].lower() else False)
+            visualize_retrieval(shape, 20, info=truth_labels, ok=truth, title=my_shape_query)
 
-    elif my_retrieval == 3:
-        idx, combined = retrieval_combined(test_imgs, color_labels, shape_labels, my_color_query, my_shape_query)
-        truth = []
-        truth_labels = []
-        for i in idx:
-            truth_labels.append([test_color_labels[i], test_class_labels[i]])
-            truth.append(True if my_shape_query.lower() == test_class_labels[i].lower() and
-                                 any(query in np.char.lower(test_color_labels[i]) for query in np.char.lower(my_color_query))
-                         else False)
-        visualize_retrieval(combined, 20, info=truth_labels, ok=truth, title=f"{my_color_query}, {my_shape_query}")
+        elif my_retrieval == 3:
+            idx, combined = retrieval_combined(test_imgs, color_labels, shape_labels, my_color_query, my_shape_query)
+            truth = []
+            truth_labels = []
+            for i in idx:
+                truth_labels.append([test_color_labels[i], test_class_labels[i]])
+                truth.append(True if my_shape_query.lower() == test_class_labels[i].lower() and
+                                     any(query in np.char.lower(test_color_labels[i]) for query in np.char.lower(my_color_query))
+                             else False)
+            visualize_retrieval(combined, 20, info=truth_labels, ok=truth, title=f"{my_color_query}, {my_shape_query}")
 
-    elif my_retrieval != 0:
-        print('NOMÉS 0, 1, 2 o 3 recorxolis!')
+        else:
+            print('NOMÉS 0, 1, 2 o 3 recorxolis!')
 
     """
     # -----------------------------
