@@ -2,6 +2,7 @@ __authors__ = ['1679933','1689435']
 __group__ = '100'
 
 from utils_data import read_dataset, read_extended_dataset, crop_images, visualize_retrieval, visualize_k_means, Plot3DCloud
+import utils
 import KNN
 import Kmeans
 import numpy as np
@@ -31,16 +32,19 @@ if __name__ == '__main__':
 
         # crear llista que contindrà les imatges que coincideixin en colors
         retrieved_images = []
+        # crear llista que contindrà indexs de coincidents
+        indexs = []
         # iterar per les etiquetes de colors i imatges per trobar coincidència amb query_color
-        for img, label in zip(images, labels):
+        for i, (img, label) in enumerate(zip(images, labels)):
             # verificar si els colors de l'etiqueta coincideixen amb alguna query_color, np.char.lower() converteix a minúscules
             # per no tenir errors en la comparació, any() retorna True si algun dels elements de query_color és igual
             # que l'etiqueta
             if any(query in np.char.lower(label) for query in np.char.lower(query_color)):
                 # si es troba imatge que coincideix en colors amb query_color, s'afegeix a retrieved_images[]
                 retrieved_images.append(img)
+                indexs.append(i)
         # es retorna retrieves_images[], que ja conté totes les imatges coincidents en color amb query_color
-        return retrieved_images
+        return indexs, np.array(retrieved_images)
 
 
     def retrieval_by_shape(images, labels, query_shape):
@@ -130,8 +134,12 @@ if __name__ == '__main__':
     def get_color_accuracy():
         pass
 
-    # ------------- set up ---------------
 
+
+    # ------------- qualitative analysis ---------------
+
+
+    # set up
     knn = KNN.KNN(train_imgs, train_class_labels)
 
     shape_labels = knn.predict(test_imgs, 5)
@@ -145,11 +153,20 @@ if __name__ == '__main__':
         colors = Kmeans.get_colors(km.centroids)
         color_labels.append(colors)
 
-    # ------------- qualitative analysis ---------------
+    # analysis
+    myquery = 'white'
+    if type(myquery) != list:
+        myquery = [myquery]
+    idx, color = retrieval_by_color(test_imgs, color_labels, myquery)
 
-    #color = retrieval_by_color(test_imgs, color_labels, 'white')
-    #visualize_retrieval(color, 20)
+    truth = []
+    truth_labels = []
+    for i in idx:
+        truth_labels.append(test_color_labels[i])
+        truth.append(True if any(query in np.char.lower(test_color_labels[i]) for query in np.char.lower(myquery)) else False)
 
+    visualize_retrieval(color, 20, info=truth_labels, ok=truth, title=myquery)
+    """
     #shape = retrieval_by_shape(test_imgs, shape_labels, 'Flip FLOPs')
     #visualize_retrieval(shape, 20)
 
@@ -158,9 +175,28 @@ if __name__ == '__main__':
 
     # ------------- quantitative analysis ---------------
 
-    wcd, iter, time_list = kmean_statistics(km, 10)
-    visualize_statistics(wcd, iter, time_list, 10)
+    #wcd, iter, time_list = kmean_statistics(km, 10)
+    #visualize_statistics(wcd, iter, time_list, 10)
 
     #accuracy = get_shape_accuracy(shape_labels, test_class_labels)
     #print(f"Percentatge d'etiquetes correctes: {accuracy}%")
+    
 
+    print('Qualitative analysis. Executing KMeans...')
+    prediction_colors = []  # Execute KMeans for every image to get color tags
+    for input in test_imgs:
+        model = Kmeans.KMeans(input)
+        model.find_bestK(5)
+        model.fit()
+        color = Kmeans.get_colors(model.centroids)
+        prediction_colors.append(color)
+
+    for color in utils.colors:
+        index, retrieval = retrieval_by_color(test_imgs, prediction_colors, [color])
+        truth = []
+        truth_labels = []
+        for i in index:
+            truth_labels.append(test_color_labels[i])
+            truth.append(True if color in test_color_labels[i] else False)
+        visualize_retrieval(retrieval, 15, title=color, ok=truth, info=truth_labels)
+    """
