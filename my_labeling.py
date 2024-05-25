@@ -138,7 +138,20 @@ if __name__ == '__main__':
         return accuracy_percentage
 
     def get_color_accuracy(labels, ground_truth):
-        pass
+        labels_len = len(labels)
+        if labels_len != len(ground_truth):
+            return None
+    
+        correct = 0
+        total = labels_len
+        for label, gt in zip(labels, ground_truth):
+            set_label = set(label)
+            set_gt = set(gt)
+            intersection_len = len(set_label & set_gt)
+            union_len = len(set_label | set_gt)
+            correct += intersection_len / union_len
+        
+        return (correct / total) * 100
 
 
     # ------------------------------
@@ -150,7 +163,7 @@ if __name__ == '__main__':
     # 2: KNN (retrieval by shape),
     # 3: Kmeans and KNN combined (retrieval by color and shape)
     # 0: None
-    my_retrieval = 1
+    my_retrieval = 0
 
     # string o array de strings, case-insesitive, s'accepta més d'un color però només una forma
     # exemples:
@@ -169,7 +182,7 @@ if __name__ == '__main__':
         color_labels = []
         options = {}
         for img in imgs:
-            km = Kmeans.KMeans(img, 1, options)
+            km = Kmeans.KMeans(img, 4, options)
             km.fit()
             colors = Kmeans.get_colors(km.centroids)
             color_labels.append(colors)
@@ -211,13 +224,28 @@ if __name__ == '__main__':
             case _:
                 print('NOMÉS 0, 1, 2 o 3 recorxolis!')
 
-    """
+    
     # -----------------------------
     # QUANTITATIVE ANALYSIS
 
-    wcd, iter, time_list = kmean_statistics(km, 10)
-    visualize_statistics(wcd, iter, time_list, 10)
+    # set up
+    knn = KNN.KNN(train_imgs, train_class_labels)
+    shape_labels = knn.predict(test_imgs, 3)
+    imgs = test_imgs
+    color_labels = []
+    options = {}
+    for img in imgs:
+        km = Kmeans.KMeans(img, 4, options)
+        km.fit()
+        colors = Kmeans.get_colors(km.centroids)
+        color_labels.append(colors)
 
-    accuracy = get_shape_accuracy(shape_labels, test_class_labels)
-    print(f"Percentatge d'etiquetes correctes: {accuracy}%")
-    """
+    #wcd, iter, time_list = kmean_statistics(km, 10)
+    #visualize_statistics(wcd, iter, time_list, 10)
+
+    #shape_accuracy = get_shape_accuracy(shape_labels, test_class_labels)
+    #print(f"Percentatge d'etiquetes correctes: {shape_accuracy}%")
+
+    color_labels = np.array(color_labels)
+    color_accuracy = get_color_accuracy(color_labels,test_color_labels)
+    print(f"Percentatge d'etiquetes correctes: {color_accuracy}%")
