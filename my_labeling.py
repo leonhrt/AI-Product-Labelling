@@ -135,6 +135,8 @@ if __name__ == '__main__':
         correct_shapes = np.equal(labels, ground_truth)
         accuracy_percentage = np.count_nonzero(correct_shapes) / labels_len * 100
 
+        print(f"Percentatge de formes correctes: {accuracy_percentage}%")
+
         return accuracy_percentage
 
     def get_color_accuracy(labels, ground_truth):
@@ -149,9 +151,13 @@ if __name__ == '__main__':
             accuracy = intersection_len / gt_len
             total_accuracy += accuracy
 
-        return (total_accuracy / labels_len) * 100
+        accuracy_percentage = (total_accuracy / labels_len) * 100
+
+        print(f"Percentatge de colors correctes: {accuracy_percentage}%")
+
+        return accuracy_percentage
     
-    def set_up(k: int = 1):
+    def set_up(k: int = 1, find_best_k: bool = False):
         # set up
         knn = KNN.KNN(train_imgs, train_class_labels)
         shape_labels = knn.predict(test_imgs, k)
@@ -159,15 +165,26 @@ if __name__ == '__main__':
         imgs = test_imgs
         color_labels = []
         options = {}
-        for img in imgs:
-            km = Kmeans.KMeans(img, k, options)
-            km.find_bestK(k)
-            km.fit()
-            colors = Kmeans.get_colors(km.centroids)
-            color_labels.append(colors)
 
-        print(km.K)
-        return shape_labels, color_labels
+        if (find_best_k):
+            start = time.time()
+            for img in imgs:
+                km = Kmeans.KMeans(img, k, options)
+                km.find_bestK(k)
+                km.fit()
+                colors = Kmeans.get_colors(km.centroids)
+                color_labels.append(colors)
+            end = time.time()
+            print(f"Millor K: {km.K}")
+            print(f"Temps per inicialitzar Kmeans: {end-start}s")
+        else:
+            for img in imgs:
+                km = Kmeans.KMeans(img, k, options)
+                km.fit()
+                colors = Kmeans.get_colors(km.centroids)
+                color_labels.append(colors)
+
+        return shape_labels, color_labels, km
 
 
     # ------------------------------
@@ -179,7 +196,7 @@ if __name__ == '__main__':
     # 2: KNN (retrieval by shape),
     # 3: Kmeans and KNN combined (retrieval by color and shape)
     # 0: None
-    my_retrieval = 1
+    my_retrieval = 0
     setup = False
     k_test = 10
 
@@ -193,7 +210,8 @@ if __name__ == '__main__':
     my_shape_query = 'handbags'
 
     if my_retrieval != 0:
-        shape_labels, color_labels = set_up(k_test)
+        # set up
+        shape_labels, color_labels, km = set_up(k_test, True)
         setup = True
 
         # analysis
@@ -238,15 +256,16 @@ if __name__ == '__main__':
     # QUANTITATIVE ANALYSIS
 
     # set up
-    if not setup:
-        shape_labels, color_labels = set_up(k_test)
-        setup = True
+    if my_retrieval != 0:
+        if not setup:
+            shape_labels, color_labels, km = set_up(k_test, True)
+            setup = True
 
-    #wcd, iter, time_list = kmean_statistics(km, 10)
-    #visualize_statistics(wcd, iter, time_list, 10)
+        wcd, iter, time_list = kmean_statistics(km, 10)
+        visualize_statistics(wcd, iter, time_list, 10)
 
-    shape_accuracy = get_shape_accuracy(shape_labels, test_class_labels)
-    print(f"Percentatge d'etiquetes correctes: {shape_accuracy}%")
-    
-    color_accuracy = get_color_accuracy(color_labels,test_color_labels)
-    print(f"Percentatge d'etiquetes correctes: {color_accuracy}%")
+        get_shape_accuracy(shape_labels, test_class_labels)
+        
+        get_color_accuracy(color_labels,test_color_labels)
+    else:
+        print("Escull un altre opció de les vàlides.")

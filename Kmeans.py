@@ -61,7 +61,7 @@ class KMeans:
         if 'max_iter' not in options:
             options['max_iter'] = np.inf
         if 'fitting' not in options:
-            options['fitting'] = 'fisher'  # within class distance.
+            options['fitting'] = 'ICD'
         if 'threshold' not in options:
             options['threshold'] = 20
         
@@ -198,7 +198,7 @@ class KMeans:
 
         for i in range(n_clusters):
             for j in range(i+1, n_clusters):
-                icd += np.linalg.norm(self.centroids[i] - self.centroids[j])**2
+                icd += np.linalg.norm(self.centroids[i] - self.centroids[j]) ** 2
 
         return icd
 
