@@ -141,17 +141,33 @@ if __name__ == '__main__':
         labels_len = len(labels)
         if labels_len != len(ground_truth):
             return None
-    
-        correct = 0
-        total = labels_len
+
+        total_accuracy = 0
         for label, gt in zip(labels, ground_truth):
-            set_label = set(label)
-            set_gt = set(gt)
-            intersection_len = len(set_label & set_gt)
-            union_len = len(set_label | set_gt)
-            correct += intersection_len / union_len
-        
-        return (correct / total) * 100
+            intersection_len = len(set(gt).intersection(set(label)))
+            gt_len = len(set(gt))
+            accuracy = intersection_len / gt_len
+            total_accuracy += accuracy
+
+        return (total_accuracy / labels_len) * 100
+    
+    def set_up(k: int = 1):
+        # set up
+        knn = KNN.KNN(train_imgs, train_class_labels)
+        shape_labels = knn.predict(test_imgs, k)
+
+        imgs = test_imgs
+        color_labels = []
+        options = {}
+        for img in imgs:
+            km = Kmeans.KMeans(img, k, options)
+            km.find_bestK(k)
+            km.fit()
+            colors = Kmeans.get_colors(km.centroids)
+            color_labels.append(colors)
+
+        print(km.K)
+        return shape_labels, color_labels
 
 
     # ------------------------------
@@ -163,7 +179,9 @@ if __name__ == '__main__':
     # 2: KNN (retrieval by shape),
     # 3: Kmeans and KNN combined (retrieval by color and shape)
     # 0: None
-    my_retrieval = 0
+    my_retrieval = 1
+    setup = False
+    k_test = 10
 
     # string o array de strings, case-insesitive, s'accepta més d'un color però només una forma
     # exemples:
@@ -175,17 +193,8 @@ if __name__ == '__main__':
     my_shape_query = 'handbags'
 
     if my_retrieval != 0:
-        # set up
-        knn = KNN.KNN(train_imgs, train_class_labels)
-        shape_labels = knn.predict(test_imgs, 5)
-        imgs = test_imgs
-        color_labels = []
-        options = {}
-        for img in imgs:
-            km = Kmeans.KMeans(img, 4, options)
-            km.fit()
-            colors = Kmeans.get_colors(km.centroids)
-            color_labels.append(colors)
+        shape_labels, color_labels = set_up(k_test)
+        setup = True
 
         # analysis
         if type(my_color_query) != list:
@@ -229,23 +238,15 @@ if __name__ == '__main__':
     # QUANTITATIVE ANALYSIS
 
     # set up
-    knn = KNN.KNN(train_imgs, train_class_labels)
-    shape_labels = knn.predict(test_imgs, 3)
-    imgs = test_imgs
-    color_labels = []
-    options = {}
-    for img in imgs:
-        km = Kmeans.KMeans(img, 4, options)
-        km.fit()
-        colors = Kmeans.get_colors(km.centroids)
-        color_labels.append(colors)
+    if not setup:
+        shape_labels, color_labels = set_up(k_test)
+        setup = True
 
     #wcd, iter, time_list = kmean_statistics(km, 10)
     #visualize_statistics(wcd, iter, time_list, 10)
 
-    #shape_accuracy = get_shape_accuracy(shape_labels, test_class_labels)
-    #print(f"Percentatge d'etiquetes correctes: {shape_accuracy}%")
-
-    color_labels = np.array(color_labels)
+    shape_accuracy = get_shape_accuracy(shape_labels, test_class_labels)
+    print(f"Percentatge d'etiquetes correctes: {shape_accuracy}%")
+    
     color_accuracy = get_color_accuracy(color_labels,test_color_labels)
     print(f"Percentatge d'etiquetes correctes: {color_accuracy}%")

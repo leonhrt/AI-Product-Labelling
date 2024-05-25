@@ -4,6 +4,7 @@ __group__ = '100'
 import numpy as np
 import utils
 import scipy.spatial.distance as sc
+import time
 
 
 class KMeans:
@@ -60,9 +61,17 @@ class KMeans:
         if 'max_iter' not in options:
             options['max_iter'] = np.inf
         if 'fitting' not in options:
-            options['fitting'] = 'WCD'  # within class distance.
+            options['fitting'] = 'fisher'  # within class distance.
         if 'threshold' not in options:
             options['threshold'] = 20
+        
+        match options["fitting"]:
+            case "ICD":
+                self.fitting_func = self.interClassDistance
+            case "fisher":
+                self.fitting_func = self.fisherCoefficient
+            case _:
+                self.fitting_func = self.withinClassDistance
 
         # If your methods need any other parameter you can add it to the options dictionary
         self.options = options
@@ -183,23 +192,40 @@ class KMeans:
             wcd += distances[self.labels[i]] ** 2
         return wcd
 
+    def interClassDistance(self):
+        icd = 0
+        n_clusters = len(self.centroids)
+
+        for i in range(n_clusters):
+            for j in range(i+1, n_clusters):
+                icd += np.linalg.norm(self.centroids[i] - self.centroids[j])**2
+
+        return icd
+
+    def fisherCoefficient(self):
+        wcd = self.withinClassDistance()
+        icd = self.interClassDistance()
+
+        return wcd / icd
+
+
     def find_bestK(self, max_K):
         """
-         sets the best k analysing the results up to 'max_K' clusters
+         sets the best k anlysing the results up to 'max_K' clusters
         """
         threshold = self.options['threshold'] / 100
         self.K = 2
         self.fit()
-        wcd_old = self.withinClassDistance()
+        distance_old = self.fitting_func()
 
         for i in range(self.K + 1, max_K):
             self.K = i
             self.fit()
-            wcd_actual = self.withinClassDistance()
-            if 1 - (wcd_actual / wcd_old) < threshold:
+            distance_actual = self.fitting_func()
+            if 1 - (distance_actual / distance_old) < threshold:
                 self.K -= 1
                 break
-            wcd_old = wcd_actual
+            distance_old = distance_actual
 
 
 def distance(X, C):
