@@ -203,10 +203,7 @@ class KMeans:
         return icd
 
     def fisherCoefficient(self):
-        wcd = self.withinClassDistance()
-        icd = self.interClassDistance()
-
-        return wcd / icd
+        return self.withinClassDistance() / self.interClassDistance()
 
 
     def find_bestK(self, max_K):
