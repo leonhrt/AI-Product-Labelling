@@ -1,9 +1,10 @@
-__authors__ = ['1679933','1689435']
-__group__ = 'noneyet'
+__authors__ = ['1679933', '1689435']
+__group__ = '100'
 
 import numpy as np
 import utils
 import scipy.spatial.distance as sc
+import time
 
 
 class KMeans:
@@ -60,9 +61,17 @@ class KMeans:
         if 'max_iter' not in options:
             options['max_iter'] = np.inf
         if 'fitting' not in options:
-            options['fitting'] = 'WCD'  # within class distance.
+            options['fitting'] = 'ICD'
         if 'threshold' not in options:
             options['threshold'] = 20
+        
+        match options["fitting"]:
+            case "ICD":
+                self.fitting_func = self.interClassDistance
+            case "fisher":
+                self.fitting_func = self.fisherCoefficient
+            case _:
+                self.fitting_func = self.withinClassDistance
 
         # If your methods need any other parameter you can add it to the options dictionary
         self.options = options
@@ -97,32 +106,37 @@ class KMeans:
 
         # si self.options['km-init'] == random assignar a self.centroids punts aleatòris no repetits de X
         elif self.options['km_init'].lower() == 'random':
-            # seleccionar K indexs aleatoris no repetits (replace=False) menors a X.shape[0] (número de
-            # elements en la primera dimensió de la matriu)
-            temp = np.random.choice(self.X.shape[0], self.K, replace=False)
-            # crear matriu centroids a partir de la matriu X i els indexs aleatòris
-            self.centroids = self.X[temp]
-            self.old_centroids = self.X[temp]
+            # passar els punts de self.X a un diccionari per així no tenir duplicats
+            temp_dict = {tuple(point): 1 for point in self.X}
+            # fer de les claus del diccionari un array
+            unique_points = np.array(list(temp_dict.keys()))
+            # ordenar aleatòriament l'array
+            np.random.shuffle(unique_points)
+            # assignar els primers self.K punts de l'array aleatòri
+            self.centroids = unique_points[:self.K].astype(float)
+            self.old_centroids = np.copy(self.centroids)
 
         elif self.options['km_init'].lower() == 'custom':
-            # considerem un hipercub de X.shape[0] dimensions, com que cada costat té 3 elements (o x.shape[1]
-            # elements), la diagonal es calcularia com sqrt(x.shape[0]) * x.shape[1], però considerem que els costats
-            # tenen una longitud de 1 per obtenir els indexs de forma més directe
-            # ex. la diagonal del cub es calcula com sqrt(3) * L, on 3 fa referència a la 3ra dimensió i L
-            # la longitud del costat
-            diagonal_len = np.sqrt(self.X.shape[0])
-            # calcular l'espai entre elements de l'array X per obtenir els indexs de la diagonal
-            gap = self.X.shape[0] / diagonal_len
-            # crear un array amb els indexs corresponents de la diagonal
-            diagonal_indexes = np.arange(0, self.X.shape[0], gap, dtype=int)
-            # calcular l'espai entre elements de la diagonal per obtenir K indexs distribuits uniformament
-            gap = int(diagonal_indexes.shape[0] / self.K)
-            # crear un array amb els K indexs distribuits uniformament de la diagonal
-            distributed_indexes = diagonal_indexes[gap-1::gap]
-            # centroids serà l'array generat a partir dels indexs distributed_indexes de l'array X
-            self.centroids = self.X[distributed_indexes]
-            self.old_centroids = self.X[distributed_indexes]
+            # inicialitzar centroids amb un d'aleatòri
+            temp = [self.X[np.random.choice(self.X.shape[0])]]
+            # calcular la distància euclidiana al quadrat entre cada punt de X i el primer centroide
+            distances = np.sum((self.X - temp[0]) ** 2, axis=1)
 
+            # iterar per tenir K centroides
+            for _ in range(1, self.K):
+                # calcular probabilitat de selecció per cada punt
+                probabilities = distances / np.sum(distances)
+                # nou punt aleatòri basant-se en les probabilitats
+                centroid = self.X[np.random.choice(self.X.shape[0], p=probabilities)]
+                # afegir el punt nou a la llista
+                temp.append(centroid)
+                # calcular distànces euclidianes, ara per cada punt de X i el nou centroide
+                temp_dist = np.sum((self.X - centroid) ** 2, axis=1)
+                # actualitzcentroidar les distàncies amb les mínimes
+                distances = np.minimum(distances, temp_dist)
+
+            self.centroids = np.array(temp)
+            self.old_centroids = np.copy(self.centroids)
 
     def get_labels(self):
         """
@@ -178,25 +192,38 @@ class KMeans:
             wcd += distances[self.labels[i]] ** 2
         return wcd
 
+    def interClassDistance(self):
+        icd = 0
+        n_clusters = len(self.centroids)
+
+        for i in range(n_clusters):
+            for j in range(i+1, n_clusters):
+                icd += np.linalg.norm(self.centroids[i] - self.centroids[j]) ** 2
+
+        return icd
+
+    def fisherCoefficient(self):
+        return self.withinClassDistance() / self.interClassDistance()
+
+
     def find_bestK(self, max_K):
         """
-         sets the best k analysing the results up to 'max_K' clusters
+         sets the best k anlysing the results up to 'max_K' clusters
         """
         threshold = self.options['threshold'] / 100
         self.K = 2
         self.fit()
-        wcd_old = self.withinClassDistance()
+        distance_old = self.fitting_func()
 
         for i in range(self.K + 1, max_K):
             self.K = i
             self.fit()
-            wcd_actual = self.withinClassDistance()
-            if 1 - (wcd_actual / wcd_old) < threshold:
+            distance_actual = self.fitting_func()
+            if 1 - (distance_actual / distance_old) < threshold:
                 self.K -= 1
                 break
-            wcd_old = wcd_actual
-        
-        
+            distance_old = distance_actual
+
 
 def distance(X, C):
     """
