@@ -61,7 +61,7 @@ class KMeans:
         if 'max_iter' not in options:
             options['max_iter'] = np.inf
         if 'fitting' not in options:
-            options['fitting'] = 'ICD'
+            options['fitting'] = 'WCD'
         if 'threshold' not in options:
             options['threshold'] = 20
         
